@@ -20,10 +20,11 @@ sleep 0.2
 q = <<-'GRAPHQL'
 mutation {
   schema {
-    name: string @index .
-    release_date: date @index .
-    revenue: float .
-    running_time: int .
+    movie.name: string @index .
+    person.name: string @index .
+    movie.release_date: date @index .
+    movie.revenue: float .
+    movie.running_time: int .
   }
 }
 GRAPHQL
@@ -34,44 +35,44 @@ pp client.query(q)
 q = <<-'GRAPHQL'
 mutation {
   set {
-   _:luke <name> "Luke Skywalker" .
-   _:leia <name> "Princess Leia" .
-   _:han <name> "Han Solo" .
-   _:lucas <name> "George Lucas" .
-   _:irvin <name> "Irvin Kernshner" .
-   _:richard <name> "Richard Marquand" .
+   _:luke <person.name> "Luke Skywalker" .
+   _:leia <person.name> "Princess Leia" .
+   _:han <person.name> "Han Solo" .
+   _:lucas <person.name> "George Lucas" .
+   _:irvin <person.name> "Irvin Kernshner" .
+   _:richard <person.name> "Richard Marquand" .
 
-   _:sw1 <name> "Star Wars: Episode IV - A New Hope" .
-   _:sw1 <release_date> "1977-05-25" .
-   _:sw1 <revenue> "775000000" .
-   _:sw1 <running_time> "121" .
+   _:sw1 <movie.name> "Star Wars: Episode IV - A New Hope" .
+   _:sw1 <movie.release_date> "1977-05-25" .
+   _:sw1 <movie.revenue> "775000000" .
+   _:sw1 <movie.running_time> "121" .
    _:sw1 <starring> _:luke .
    _:sw1 <starring> _:leia .
    _:sw1 <starring> _:han .
    _:sw1 <director> _:lucas .
 
-   _:sw2 <name> "Star Wars: Episode V - The Empire Strikes Back" .
-   _:sw2 <release_date> "1980-05-21" .
-   _:sw2 <revenue> "534000000" .
-   _:sw2 <running_time> "124" .
+   _:sw2 <movie.name> "Star Wars: Episode V - The Empire Strikes Back" .
+   _:sw2 <movie.release_date> "1980-05-21" .
+   _:sw2 <movie.revenue> "534000000" .
+   _:sw2 <movie.running_time> "124" .
    _:sw2 <starring> _:luke .
    _:sw2 <starring> _:leia .
    _:sw2 <starring> _:han .
    _:sw2 <director> _:irvin .
 
-   _:sw3 <name> "Star Wars: Episode VI - Return of the Jedi" .
-   _:sw3 <release_date> "1983-05-25" .
-   _:sw3 <revenue> "572000000" .
-   _:sw3 <running_time> "131" .
+   _:sw3 <movie.name> "Star Wars: Episode VI - Return of the Jedi" .
+   _:sw3 <movie.release_date> "1983-05-25" .
+   _:sw3 <movie.revenue> "572000000" .
+   _:sw3 <movie.running_time> "131" .
    _:sw3 <starring> _:luke .
    _:sw3 <starring> _:leia .
    _:sw3 <starring> _:han .
    _:sw3 <director> _:richard .
 
-   _:st1 <name> "Star Trek: The Motion Picture" .
-   _:st1 <release_date> "1979-12-07" .
-   _:st1 <revenue> "139000000" .
-   _:st1 <running_time> "132" .
+   _:st1 <movie.name> "Star Trek: The Motion Picture" .
+   _:st1 <movie.release_date> "1979-12-07" .
+   _:st1 <movie.revenue> "139000000" .
+   _:st1 <movie.running_time> "132" .
   }
 }
 GRAPHQL
@@ -81,24 +82,137 @@ pp client.query(q)
 banner "all directors"
 q = <<-'GRAPHQL'
 {
-  me(func:allofterms(name, "Star Wars")) @filter(ge(release_date, "1980")) {
+  me(func:allofterms(movie.name, "Star Wars")) @filter(ge(movie.release_date, "1980")) {
     _uid_
-    name
-    release_date
-    revenue
-    running_time
+    movie.name
+    movie.release_date
+    movie.revenue
+    movie.running_time
     director {
       _uid_
-     name
+     person.name
     }
     starring {
       _uid_
-     name
+     person.name
     }
   }
 }
 GRAPHQL
 
+pp client.query(q)
+
+q = <<-'GRAPHQL'
+mutation {
+  set {
+    <0x01> <name> "Alice" .
+    <0x01> <name> "Алисия"@ru .
+    <0x01> <name> "Adélaïde"@fr .
+  }
+}
+GRAPHQL
+pp client.query(q)
+
+banner("query Alice by uid")
+q = <<-'GRAPHQL'
+query {
+  alice(id:<0x01>){
+    name@en
+    name@ru
+    name@fr
+  }
+}
+GRAPHQL
+pp client.query(q)
+
+
+banner("query Alice by XID")
+q = <<-'GRAPHQL'
+mutation {
+  set {
+    <alice> <name> "Alice" .
+    <lewis-carrol> <died> "1998" .
+  }
+}
+
+query {
+  me(id:alice) {
+    name
+  }
+  lewis(id:lewis-carrol) {
+    died
+  }
+}
+GRAPHQL
+pp client.query(q)
+
+q = <<-'GRAPHQL'
+mutation {
+  delete {
+     <lewis-carrol> <died> * .
+  }
+}
+GRAPHQL
+pp client.query(q)
+
+banner("Just playing...")
+q = <<-'GRAPHQL'
+mutation {
+  schema {
+    title: string .
+    type: string @index(exact) .
+    created_at: datetime @index .
+    count_slides: int .
+  }
+  set {
+    <slide.45> <title> "My slides with Number 45" .
+    <slide.45> <type> "presentation" .
+    <slide.45> <count_slides> "30" .
+    <slide.45> <created_at> "2017-06-09" .
+
+    <slide.47> <title> "My slides with Number 47" .
+    <slide.47> <type> "presentation" .
+    <slide.47> <count_slides> "30" .
+    <slide.47> <created_at> "2017-05-25" .
+
+    <slide.46> <title> "My slide with Number 46 - awesome!" .
+    <slide.46> <type> "presentation" .
+    <slide.46> <count_slides> "60" .
+    <slide.46> <created_at> "2017-06-10" .
+  }
+}
+
+query{
+  result(func: eq(type, "presentation")){
+    title
+    count_slides
+    created_at
+  }
+}
+GRAPHQL
+pp client.query(q)
+
+
+banner("Fetching Schema for all")
+q = <<-'GRAPHQL'
+schema {
+  type
+  index
+  reverse
+  tokenizer
+}
+GRAPHQL
+pp client.query(q)
+
+banner("Fetching Schema for some predicates")
+q = <<-'GRAPHQL'
+schema(pred: [name, release_date, type]) {
+  type
+  index
+  reverse
+  tokenizer
+}
+GRAPHQL
 pp client.query(q)
 
 controller.stop
