@@ -15,5 +15,13 @@ module Dgraph
       )
       Pathname.new(str_path)
     end
+
+    def http
+       HTTPClient.new
+    end
+
+    def server_url # default
+      "http://localhost:8080"
+    end
   end
 end
