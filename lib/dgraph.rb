@@ -1,5 +1,6 @@
 # stdlib
 require "pathname"
+require "fileutils"
 
 # lib files
 require "dgraph/version"
