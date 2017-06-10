@@ -45,6 +45,7 @@ module Dgraph
       end
 
       def ensure_data!
+        FileUtils.rm_rf(datafolder)
         FileUtils.mkdir_p(datafolder)
       end
 
