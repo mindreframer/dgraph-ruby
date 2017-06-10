@@ -25,6 +25,13 @@ module Dgraph
         @server_pids ||= []
       end
 
+      def kill_all
+        res  = `ps -ef|grep dgraph`
+        a    = res.split("\n").select{|x| x.include?("tmp/dgraph/dgraph")}
+        pids = a.map{|x| x.split[1]}
+        pids.each{|x| ::Process.kill("SIGTERM", x.to_i)}
+      end
+
       private
 
       def spawn_opts
