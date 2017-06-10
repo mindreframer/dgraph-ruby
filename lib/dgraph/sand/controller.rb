@@ -2,18 +2,35 @@ module Dgraph
   module Sand
     # Controller is responsible for starting / stopping Dgraph server
     class Controller
-      attr_accessor :server_pid
+      attr_accessor :server_pids
+      attr_accessor :debug
+
+      def initialize(debug: true)
+        @debug = debug
+      end
+
       def start
         in_data do
-          @server_pid = Kernel.spawn(binary_path)
+          server_pids << Kernel.spawn(binary_path, spawn_opts)
         end
       end
 
-      def stop
-        ::Process.kill('SIGTERM', server_pid)
+      def stop(idx=0)
+        return unless server_pids[idx]
+        ::Process.kill('SIGTERM', server_pids[idx])
+        server_pids.delete_at(idx)
+      end
+
+      def server_pids
+        @server_pids ||= []
       end
 
       private
+
+      def spawn_opts
+        return {} if debug
+        return [:out, :err] => "/dev/null" # no output
+      end
 
       def in_data(&block)
         ensure_data!
