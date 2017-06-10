@@ -2,13 +2,35 @@
 
 require "bundler/setup"
 require "dgraph"
+require "pp"
 
 controller = Dgraph::Sand::Controller.new(debug: false)
 controller.kill_all
 controller.start
 
+def banner(str)
+  puts "*" * 80
+  puts str
+  puts "*" * 80
+end
 
 client = Dgraph::Client.new
+
+sleep 0.2
+q = <<-'GRAPHQL'
+mutation {
+  schema {
+    name: string @index .
+    release_date: date @index .
+    revenue: float .
+    running_time: int .
+  }
+}
+GRAPHQL
+pp client.query(q)
+
+
+
 q = <<-'GRAPHQL'
 mutation {
   set {
@@ -54,9 +76,29 @@ mutation {
 }
 GRAPHQL
 
-sleep 0.1
-puts client.query(q)
+pp client.query(q)
+
+banner "all directors"
+q = <<-'GRAPHQL'
+{
+  me(func:allofterms(name, "Star Wars")) @filter(ge(release_date, "1980")) {
+    _uid_
+    name
+    release_date
+    revenue
+    running_time
+    director {
+      _uid_
+     name
+    }
+    starring {
+      _uid_
+     name
+    }
+  }
+}
+GRAPHQL
+
+pp client.query(q)
 
 controller.stop
-
-
