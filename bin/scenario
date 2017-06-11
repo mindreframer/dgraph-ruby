@@ -159,33 +159,37 @@ banner("Just playing...")
 q = <<-'GRAPHQL'
 mutation {
   schema {
-    title: string .
     type: string @index(exact) .
     created_at: datetime @index .
-    count_slides: int .
+
+    presi.title: string .
+    presi.count_slides: int .
   }
   set {
-    <slide.45> <title> "My slides with Number 45" .
     <slide.45> <type> "presentation" .
-    <slide.45> <count_slides> "30" .
     <slide.45> <created_at> "2017-06-09" .
+    <slide.45> <presi.title> "My slides with Number 45" .
+    <slide.45> <presi.count_slides> "30" .
 
-    <slide.47> <title> "My slides with Number 47" .
+
     <slide.47> <type> "presentation" .
-    <slide.47> <count_slides> "30" .
     <slide.47> <created_at> "2017-05-25" .
+    <slide.47> <presi.title> "My slides with Number 47" .
+    <slide.47> <presi.count_slides> "30" .
 
-    <slide.46> <title> "My slide with Number 46 - awesome!" .
+
     <slide.46> <type> "presentation" .
-    <slide.46> <count_slides> "60" .
     <slide.46> <created_at> "2017-06-10" .
+    <slide.46> <presi.title> "My slide with Number 46 - awesome!" .
+    <slide.46> <presi.count_slides> "60" .
+
   }
 }
 
 query{
   result(func: eq(type, "presentation")){
-    title
-    count_slides
+    presi.title
+    presi.count_slides
     created_at
   }
 }
@@ -212,6 +216,67 @@ schema(pred: [name, release_date, type]) {
   reverse
   tokenizer
 }
+GRAPHQL
+pp client.query(q)
+
+
+banner("Fetching Schema for some predicates")
+
+q = <<-'GRAPHQL'
+mutation {
+  schema {
+    age: int @index .
+    name: string @index .
+    address: string .
+    boss_of: uid @reverse .
+  }
+}
+GRAPHQL
+pp client.query(q)
+
+
+q = <<-'GRAPHQL'
+mutation {
+  set {
+    <a> <name> "alice" .
+    <b> <name> "bob" .
+    <a> <age> "10" .
+    <b> <age> "20" .
+    <b> <boss_of> <a> .
+    <a> <address> "London" .
+    <b> <address> "San Francisco" .
+  }
+}
+# https://discuss.dgraph.io/t/schema-for-get-employees-for-some-boss-and-get-boss-for-some-employees/1243
+query {
+  #Q1
+  employee(id:a) {
+    name
+    ~boss_of {
+      name
+    }
+  }
+
+  #Q2
+  boss(func: gt(age, 15)) {
+    name
+    boss_of {
+      name
+    }
+  }
+
+  #Q3
+  all(func: anyofterms(name, "alice bob")) {
+    name
+    boss_of {
+      name
+    }
+    ~boss_of {
+      name
+    }
+  }
+}
+
 GRAPHQL
 pp client.query(q)
 
